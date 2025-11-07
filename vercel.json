@@ -1,9 +1,9 @@
 {
-  "buildCommand": "npm run build",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api/index"
+  "version": 2,
+  "functions": {
+    "api/index.ts": {
+      "memory": 1024,
+      "maxDuration": 10
     }
-  ]
+  }
 }
