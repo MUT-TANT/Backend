@@ -4,8 +4,7 @@
   "description": "Backend API for StackSave - DeFi Savings Platform",
   "main": "dist/server.js",
   "scripts": {
-    "build": "prisma generate && tsc",
-    "vercel-build": "prisma generate",
+    "build": "npx prisma generate && tsc",
     "start": "node dist/server.js",
     "dev": "nodemon --exec ts-node src/server.ts",
     "watch": "tsc --watch"
