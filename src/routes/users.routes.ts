@@ -10,4 +10,7 @@ const router = Router();
 // Get all goals for a user
 router.get('/:address/goals', (req, res) => goalsController.getUserGoals(req, res));
 
+// Get user's portfolio (wallet balances + goals summary)
+router.get('/:address/portfolio', (req, res) => goalsController.getUserPortfolio(req, res));
+
 export default router;

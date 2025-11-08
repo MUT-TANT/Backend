@@ -16,6 +16,11 @@ export declare class GoalsController {
      */
     getUserGoals(req: Request, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
     /**
+     * Get user's portfolio (wallet balances + goals summary)
+     * GET /api/users/:address/portfolio
+     */
+    getUserPortfolio(req: Request, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+    /**
      * Deposit to a goal
      * POST /api/goals/:goalId/deposit
      */

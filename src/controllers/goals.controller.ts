@@ -244,6 +244,94 @@ export class GoalsController {
   }
 
   /**
+   * Get user's portfolio (wallet balances + goals summary)
+   * GET /api/users/:address/portfolio
+   */
+  async getUserPortfolio(req: Request, res: Response) {
+    try {
+      const { address } = req.params;
+
+      if (!address || !address.startsWith('0x')) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid address',
+        });
+      }
+
+      const provider = blockchainService.getProvider();
+
+      // Fetch ETH balance
+      const ethBalanceWei = await provider.getBalance(address);
+      const ethBalance = blockchainService.formatEther(ethBalanceWei);
+
+      // Fetch token balances for USDC, DAI, WETH
+      const TOKEN_ADDRESSES = {
+        USDC: process.env.USDC_ADDRESS || '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        DAI: process.env.DAI_ADDRESS || '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        WETH: process.env.WETH_ADDRESS || '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+      };
+
+      const tokens = await Promise.all(
+        Object.entries(TOKEN_ADDRESSES).map(async ([symbol, tokenAddress]) => {
+          const tokenContract = blockchainService.getERC20Contract(tokenAddress);
+
+          const [balance, decimals, tokenSymbol] = await Promise.all([
+            tokenContract.balanceOf(address),
+            tokenContract.decimals(),
+            tokenContract.symbol(),
+          ]);
+
+          return {
+            address: tokenAddress,
+            symbol: tokenSymbol,
+            decimals: Number(decimals),
+            balance: blockchainService.formatUnits(balance, decimals),
+            balanceRaw: balance.toString(),
+          };
+        })
+      );
+
+      // Fetch user goals summary
+      const dbGoals = await databaseService.getUserGoals(address);
+
+      const goalsSummary = {
+        totalValue: dbGoals.reduce((sum, g) => sum + parseFloat(g.currentValue || '0'), 0).toString(),
+        totalDeposited: dbGoals.reduce((sum, g) => sum + parseFloat(g.depositedAmount || '0'), 0).toString(),
+        totalYield: dbGoals.reduce((sum, g) => sum + parseFloat(g.yieldEarned || '0'), 0).toString(),
+        count: dbGoals.length,
+      };
+
+      // Calculate total portfolio value (simplified - just sum of numeric values)
+      const totalWalletValue = parseFloat(ethBalance) +
+        tokens.reduce((sum, token) => sum + parseFloat(token.balance), 0);
+      const totalPortfolioValue = (totalWalletValue + parseFloat(goalsSummary.totalValue)).toString();
+
+      res.json({
+        success: true,
+        data: {
+          address,
+          timestamp: Date.now(),
+          balances: {
+            eth: {
+              balance: ethBalance,
+              balanceWei: ethBalanceWei.toString(),
+            },
+            tokens,
+          },
+          goals: goalsSummary,
+          totalPortfolioValue,
+        },
+      });
+    } catch (error: any) {
+      console.error('Error in getUserPortfolio:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to get user portfolio',
+      });
+    }
+  }
+
+  /**
    * Deposit to a goal
    * POST /api/goals/:goalId/deposit
    */
