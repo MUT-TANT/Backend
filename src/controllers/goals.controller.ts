@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { contractService } from '../services/contract.service';
 import { blockchainService } from '../services/blockchain.service';
 import { databaseService } from '../services/database.service';
-import { projectsService } from '../services/projects.service';
 
 export class GoalsController {
   /**
@@ -11,7 +10,7 @@ export class GoalsController {
    */
   async createGoal(req: Request, res: Response) {
     try {
-      const { name, currency, mode, targetAmount, durationInDays, donationPercentage, owner, donationRecipient } = req.body;
+      const { name, currency, mode, targetAmount, durationInDays, donationPercentage, owner } = req.body;
 
       // Validation
       if (!name || !currency || mode === undefined || !targetAmount || !durationInDays || donationPercentage === undefined || !owner) {
@@ -35,18 +34,7 @@ export class GoalsController {
         });
       }
 
-      // Validate donation recipient if provided
-      if (donationRecipient) {
-        const isApproved = projectsService.isApprovedProject(donationRecipient);
-        if (!isApproved) {
-          return res.status(400).json({
-            success: false,
-            error: 'Invalid donation recipient - not an approved public goods project',
-          });
-        }
-      }
-
-      // Create goal in database (off-chain)
+      // Create goal in database first (off-chain)
       const goal = await databaseService.createGoal({
         name,
         owner,
@@ -55,15 +43,48 @@ export class GoalsController {
         targetAmount,
         duration: durationInDays,
         donationPercentage,
-        donationRecipient,
       });
+
+      // Create goal on blockchain
+      let blockchainGoalId: number | undefined;
+      let txHash: string | undefined;
+
+      try {
+        const result = await contractService.createGoal(
+          name,
+          currency,
+          mode,
+          targetAmount,
+          durationInDays,
+          donationPercentage
+        );
+
+        blockchainGoalId = result.goalId;
+        txHash = result.txHash;
+
+        // Update database with blockchain goal ID
+        if (blockchainGoalId !== undefined) {
+          await databaseService.updateGoal(goal.id, {
+            blockchainGoalId,
+          });
+        }
+
+        console.log(`✅ Goal created - DB ID: ${goal.id}, Blockchain ID: ${blockchainGoalId}`);
+      } catch (error: any) {
+        console.error('⚠️  Blockchain goal creation failed:', error.message);
+        // Continue - goal is still created in database
+        // Frontend can retry blockchain creation later if needed
+      }
 
       res.status(201).json({
         success: true,
         data: {
           goalId: goal.id,
+          blockchainGoalId,
+          txHash,
           goal: {
             id: goal.id,
+            blockchainGoalId,
             name: goal.name,
             owner: goal.owner,
             currency: goal.currency,
@@ -82,7 +103,8 @@ export class GoalsController {
             longestStreak: goal.longestStreak,
             dailySaves: [],
           },
-          message: 'Goal created successfully',
+          message: 'Goal created successfully' + (txHash ? ' on blockchain' : ' (blockchain pending)'),
+          explorer: txHash ? `https://dashboard.tenderly.co/tx/${txHash}` : undefined,
         },
       });
     } catch (error: any) {

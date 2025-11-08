@@ -11,6 +11,7 @@ const cors_1 = __importDefault(require("cors"));
 const goals_routes_1 = __importDefault(require("./routes/goals.routes"));
 const users_routes_1 = __importDefault(require("./routes/users.routes"));
 const faucet_routes_1 = __importDefault(require("./routes/faucet.routes"));
+const projects_routes_1 = __importDefault(require("./routes/projects.routes"));
 const errorHandler_1 = require("./middleware/errorHandler");
 // Initialize Express app
 const app = (0, express_1.default)();
@@ -40,10 +41,12 @@ app.get('/health', (req, res) => {
 app.use(`/api/${API_VERSION}/goals`, goals_routes_1.default);
 app.use(`/api/${API_VERSION}/users`, users_routes_1.default);
 app.use(`/api/${API_VERSION}/faucet`, faucet_routes_1.default);
+app.use(`/api/${API_VERSION}/projects`, projects_routes_1.default);
 // For backward compatibility, also support routes without version
 app.use('/api/goals', goals_routes_1.default);
 app.use('/api/users', users_routes_1.default);
 app.use('/api/faucet', faucet_routes_1.default);
+app.use('/api/projects', projects_routes_1.default);
 // 404 handler
 app.use(errorHandler_1.notFoundHandler);
 // Error handler (must be last)
@@ -72,6 +75,9 @@ if (process.env.NODE_ENV !== 'production') {
         console.log(`  POST /api/faucet/claim`);
         console.log(`  GET  /api/faucet/can-claim/:address/:tokenAddress`);
         console.log(`  GET  /api/faucet/balance/:address/:tokenAddress`);
+        console.log(`  GET  /api/projects`);
+        console.log(`  GET  /api/projects/categories`);
+        console.log(`  GET  /api/projects/:id`);
         console.log('================================');
         console.log('');
     });
