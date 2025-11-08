@@ -8,6 +8,7 @@ export interface CreateGoalParams {
     donationPercentage: number;
 }
 export interface UpdateGoalParams {
+    blockchainGoalId?: number;
     depositedAmount?: string;
     currentValue?: string;
     yieldEarned?: string;
@@ -21,6 +22,7 @@ declare class DatabaseService {
     createGoal(params: CreateGoalParams): Promise<{
         currentValue: string;
         yieldEarned: string;
+        blockchainGoalId: number | null;
         name: string;
         owner: string;
         currency: string;
@@ -44,6 +46,7 @@ declare class DatabaseService {
     getGoal(goalId: number): Promise<{
         currentValue: string;
         yieldEarned: string;
+        blockchainGoalId: number | null;
         name: string;
         owner: string;
         currency: string;
@@ -67,6 +70,7 @@ declare class DatabaseService {
     getUserGoals(address: string): Promise<{
         currentValue: string;
         yieldEarned: string;
+        blockchainGoalId: number | null;
         name: string;
         owner: string;
         currency: string;
@@ -90,6 +94,7 @@ declare class DatabaseService {
     updateGoal(goalId: number, params: UpdateGoalParams): Promise<{
         currentValue: string;
         yieldEarned: string;
+        blockchainGoalId: number | null;
         name: string;
         owner: string;
         currency: string;

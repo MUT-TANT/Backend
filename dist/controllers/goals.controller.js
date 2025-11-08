@@ -30,7 +30,7 @@ class GoalsController {
                     error: 'Donation percentage must be between 0 and 10000',
                 });
             }
-            // Create goal in database (off-chain)
+            // Create goal in database first (off-chain)
             const goal = await database_service_1.databaseService.createGoal({
                 name,
                 owner,
@@ -40,12 +40,35 @@ class GoalsController {
                 duration: durationInDays,
                 donationPercentage,
             });
+            // Create goal on blockchain
+            let blockchainGoalId;
+            let txHash;
+            try {
+                const result = await contract_service_1.contractService.createGoal(name, currency, mode, targetAmount, durationInDays, donationPercentage);
+                blockchainGoalId = result.goalId;
+                txHash = result.txHash;
+                // Update database with blockchain goal ID
+                if (blockchainGoalId !== undefined) {
+                    await database_service_1.databaseService.updateGoal(goal.id, {
+                        blockchainGoalId,
+                    });
+                }
+                console.log(`✅ Goal created - DB ID: ${goal.id}, Blockchain ID: ${blockchainGoalId}`);
+            }
+            catch (error) {
+                console.error('⚠️  Blockchain goal creation failed:', error.message);
+                // Continue - goal is still created in database
+                // Frontend can retry blockchain creation later if needed
+            }
             res.status(201).json({
                 success: true,
                 data: {
                     goalId: goal.id,
+                    blockchainGoalId,
+                    txHash,
                     goal: {
                         id: goal.id,
+                        blockchainGoalId,
                         name: goal.name,
                         owner: goal.owner,
                         currency: goal.currency,
@@ -64,7 +87,8 @@ class GoalsController {
                         longestStreak: goal.longestStreak,
                         dailySaves: [],
                     },
-                    message: 'Goal created successfully',
+                    message: 'Goal created successfully' + (txHash ? ' on blockchain' : ' (blockchain pending)'),
+                    explorer: txHash ? `https://dashboard.tenderly.co/tx/${txHash}` : undefined,
                 },
             });
         }
