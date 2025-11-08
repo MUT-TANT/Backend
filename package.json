@@ -4,8 +4,10 @@
   "description": "Backend API for StackSave - DeFi Savings Platform",
   "main": "dist/server.js",
   "scripts": {
-    "start": "ts-node src/server.ts",
-    "dev": "nodemon --exec ts-node src/server.ts",
+    "postinstall": "chmod +x ./node_modules/.bin/prisma && npx prisma generate",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts",
     "check-contract": "ts-node src/scripts/checkContract.ts",
     "configure-vaults": "ts-node src/scripts/configureVaults.ts",
     "check-db": "ts-node src/scripts/checkDatabase.ts"
