@@ -4,10 +4,10 @@
   "description": "Backend API for StackSave - DeFi Savings Platform",
   "main": "dist/server.js",
   "scripts": {
-    "postinstall": "chmod +x ./node_modules/.bin/prisma && npx prisma generate",
-    "build": "tsc",
+    "postinstall": "chmod +x ./node_modules/.bin/* && npx prisma generate",
+    "build": "npx tsc",
     "start": "node dist/server.js",
-    "dev": "ts-node src/server.ts",
+    "dev": "nodemon --exec ts-node src/server.ts",
     "check-contract": "ts-node src/scripts/checkContract.ts",
     "configure-vaults": "ts-node src/scripts/configureVaults.ts",
     "check-db": "ts-node src/scripts/checkDatabase.ts"
@@ -16,7 +16,6 @@
     "@prisma/client": "^6.19.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
-    "@types/node": "^24.10.0",
     "axios": "^1.13.2",
     "bull": "^4.16.5",
     "cors": "^2.8.5",
@@ -27,11 +26,12 @@
     "morgan": "^1.10.1",
     "pg": "^8.16.3",
     "prisma": "^6.19.0",
-    "redis": "^5.9.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "redis": "^5.9.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "@types/node": "^24.10.0",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }
