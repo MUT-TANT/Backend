@@ -30,6 +30,9 @@ declare class DatabaseService {
         donationPercentage: number;
         depositedAmount: string;
         status: number;
+        currentStreak: number;
+        longestStreak: number;
+        lastStreakUpdate: Date;
         createdAt: Date;
         lastDepositTime: Date;
         updatedAt: Date;
@@ -50,6 +53,9 @@ declare class DatabaseService {
         donationPercentage: number;
         depositedAmount: string;
         status: number;
+        currentStreak: number;
+        longestStreak: number;
+        lastStreakUpdate: Date;
         createdAt: Date;
         lastDepositTime: Date;
         updatedAt: Date;
@@ -70,6 +76,9 @@ declare class DatabaseService {
         donationPercentage: number;
         depositedAmount: string;
         status: number;
+        currentStreak: number;
+        longestStreak: number;
+        lastStreakUpdate: Date;
         createdAt: Date;
         lastDepositTime: Date;
         updatedAt: Date;
@@ -90,6 +99,9 @@ declare class DatabaseService {
         donationPercentage: number;
         depositedAmount: string;
         status: number;
+        currentStreak: number;
+        longestStreak: number;
+        lastStreakUpdate: Date;
         createdAt: Date;
         lastDepositTime: Date;
         updatedAt: Date;
@@ -109,6 +121,30 @@ declare class DatabaseService {
         totalDeposited: number;
         totalYield: number;
     }>;
+    /**
+     * Record a daily save for a goal
+     */
+    recordDailySave(goalId: number, amount: string): Promise<{
+        goalId: number;
+        createdAt: Date;
+        id: number;
+        date: Date;
+        amount: string;
+    }>;
+    /**
+     * Get daily saves for a goal (last 7 days)
+     */
+    getDailySaves(goalId: number, days?: number): Promise<{
+        goalId: number;
+        createdAt: Date;
+        id: number;
+        date: Date;
+        amount: string;
+    }[]>;
+    /**
+     * Update streak for a goal
+     */
+    updateStreak(goalId: number): Promise<void>;
     /**
      * Cleanup - disconnect Prisma client
      */

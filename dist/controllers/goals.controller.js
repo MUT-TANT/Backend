@@ -53,9 +53,16 @@ class GoalsController {
                         targetAmount: goal.targetAmount,
                         duration: goal.duration,
                         donationPercentage: goal.donationPercentage,
+                        depositedAmount: goal.depositedAmount,
+                        currentValue: goal.currentValue,
+                        yieldEarned: goal.yieldEarned,
                         status: goal.status,
                         statusText: ['Active', 'Completed', 'Abandoned', 'Withdrawn'][goal.status],
                         createdAt: goal.createdAt.getTime(),
+                        lastDepositTime: goal.lastDepositTime.getTime(),
+                        currentStreak: goal.currentStreak,
+                        longestStreak: goal.longestStreak,
+                        dailySaves: [],
                     },
                     message: 'Goal created successfully',
                 },
@@ -135,9 +142,18 @@ class GoalsController {
                 });
             }
             const dbGoals = await database_service_1.databaseService.getUserGoals(address);
+            // Get daily saves for each goal (last 7 days)
+            const goalsWithSaves = await Promise.all(dbGoals.map(async (goal) => {
+                const dailySaves = await database_service_1.databaseService.getDailySaves(goal.id, 7);
+                return {
+                    ...goal,
+                    dailySaves,
+                };
+            }));
             // Format goals
-            const goals = dbGoals.map((goal) => ({
+            const goals = goalsWithSaves.map((goal) => ({
                 id: goal.id,
+                name: goal.name,
                 owner: goal.owner,
                 currency: goal.currency,
                 mode: goal.mode,
@@ -151,6 +167,12 @@ class GoalsController {
                 statusText: ['Active', 'Completed', 'Abandoned', 'Withdrawn'][goal.status],
                 currentValue: goal.currentValue,
                 yieldEarned: goal.yieldEarned,
+                currentStreak: goal.currentStreak,
+                longestStreak: goal.longestStreak,
+                dailySaves: goal.dailySaves.map((save) => ({
+                    date: save.date.getTime(),
+                    amount: save.amount,
+                })),
             }));
             res.json({
                 success: true,
@@ -189,7 +211,20 @@ class GoalsController {
                     error: 'Amount is required',
                 });
             }
+            // Execute blockchain deposit (deposits to Morpho v2 vault)
             const result = await contract_service_1.contractService.deposit(Number(goalId), amount);
+            // Get updated goal details from blockchain after deposit
+            const goalDetails = await contract_service_1.contractService.getGoalDetails(Number(goalId));
+            // Update database with blockchain state
+            await database_service_1.databaseService.updateGoal(Number(goalId), {
+                depositedAmount: goalDetails.goal.depositedAmount.toString(),
+                currentValue: goalDetails.currentValue.toString(),
+                yieldEarned: goalDetails.yieldEarned.toString(),
+                status: Number(goalDetails.goal.status),
+                lastDepositTime: new Date(),
+            });
+            // Record daily save for streak tracking
+            await database_service_1.databaseService.recordDailySave(Number(goalId), amount);
             res.json({
                 success: true,
                 data: {

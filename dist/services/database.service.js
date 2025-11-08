@@ -81,6 +81,108 @@ class DatabaseService {
         return stats;
     }
     /**
+     * Record a daily save for a goal
+     */
+    async recordDailySave(goalId, amount) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset to start of day
+        // Check if save already exists for today
+        const existing = await prisma.dailySave.findUnique({
+            where: {
+                goalId_date: {
+                    goalId,
+                    date: today,
+                },
+            },
+        });
+        if (existing) {
+            // Update existing save
+            return await prisma.dailySave.update({
+                where: { id: existing.id },
+                data: { amount },
+            });
+        }
+        // Create new daily save
+        const dailySave = await prisma.dailySave.create({
+            data: {
+                goalId,
+                date: today,
+                amount,
+            },
+        });
+        // Update streak
+        await this.updateStreak(goalId);
+        return dailySave;
+    }
+    /**
+     * Get daily saves for a goal (last 7 days)
+     */
+    async getDailySaves(goalId, days = 7) {
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        startDate.setHours(0, 0, 0, 0);
+        const saves = await prisma.dailySave.findMany({
+            where: {
+                goalId,
+                date: {
+                    gte: startDate,
+                },
+            },
+            orderBy: {
+                date: 'desc',
+            },
+        });
+        return saves;
+    }
+    /**
+     * Update streak for a goal
+     */
+    async updateStreak(goalId) {
+        const goal = await prisma.goal.findUnique({ where: { id: goalId } });
+        if (!goal)
+            return;
+        // Get all daily saves ordered by date descending
+        const saves = await prisma.dailySave.findMany({
+            where: { goalId },
+            orderBy: { date: 'desc' },
+        });
+        if (saves.length === 0) {
+            await prisma.goal.update({
+                where: { id: goalId },
+                data: {
+                    currentStreak: 0,
+                    lastStreakUpdate: new Date(),
+                },
+            });
+            return;
+        }
+        // Calculate current streak
+        let currentStreak = 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        for (let i = 0; i < saves.length; i++) {
+            const expectedDate = new Date(today);
+            expectedDate.setDate(expectedDate.getDate() - i);
+            const saveDate = new Date(saves[i].date);
+            saveDate.setHours(0, 0, 0, 0);
+            if (saveDate.getTime() === expectedDate.getTime()) {
+                currentStreak++;
+            }
+            else {
+                break;
+            }
+        }
+        // Update goal with new streak
+        await prisma.goal.update({
+            where: { id: goalId },
+            data: {
+                currentStreak,
+                longestStreak: Math.max(currentStreak, goal.longestStreak),
+                lastStreakUpdate: new Date(),
+            },
+        });
+    }
+    /**
      * Cleanup - disconnect Prisma client
      */
     async disconnect() {
