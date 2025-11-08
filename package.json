@@ -7,8 +7,10 @@
     "start": "node dist/server.js",
     "dev": "nodemon --exec ts-node src/server.ts",
     "check-contract": "ts-node src/scripts/checkContract.ts",
+    "check-faucet": "ts-node src/scripts/checkFaucet.ts",
     "configure-vaults": "ts-node src/scripts/configureVaults.ts",
-    "check-db": "ts-node src/scripts/checkDatabase.ts"
+    "check-db": "ts-node src/scripts/checkDatabase.ts",
+    "verify-morpho": "ts-node src/scripts/verifyMorpho.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
