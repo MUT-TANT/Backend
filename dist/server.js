@@ -13,6 +13,9 @@ const users_routes_1 = __importDefault(require("./routes/users.routes"));
 const faucet_routes_1 = __importDefault(require("./routes/faucet.routes"));
 const projects_routes_1 = __importDefault(require("./routes/projects.routes"));
 const errorHandler_1 = require("./middleware/errorHandler");
+const client_1 = require("@prisma/client");
+// Initialize Prisma Client
+const prisma = new client_1.PrismaClient();
 // Initialize Express app
 const app = (0, express_1.default)();
 const PORT = Number(process.env.PORT) || 3000;
@@ -29,13 +32,29 @@ app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
     next();
 });
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.json({
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        version: API_VERSION,
-    });
+// Health check endpoint with database status
+app.get('/health', async (req, res) => {
+    try {
+        // Test database connection
+        await prisma.$queryRaw `SELECT 1`;
+        res.json({
+            status: 'healthy',
+            timestamp: new Date().toISOString(),
+            version: API_VERSION,
+            database: 'connected',
+            environment: process.env.NODE_ENV || 'development',
+        });
+    }
+    catch (error) {
+        console.error('❌ Health check failed - Database error:', error.message);
+        res.status(503).json({
+            status: 'unhealthy',
+            timestamp: new Date().toISOString(),
+            version: API_VERSION,
+            database: 'disconnected',
+            error: error.message,
+        });
+    }
 });
 // API Routes
 app.use(`/api/${API_VERSION}/goals`, goals_routes_1.default);
@@ -51,8 +70,37 @@ app.use('/api/projects', projects_routes_1.default);
 app.use(errorHandler_1.notFoundHandler);
 // Error handler (must be last)
 app.use(errorHandler_1.errorHandler);
-// Start server only in development mode (not on Vercel serverless)
-if (process.env.NODE_ENV !== 'production') {
+// Test database connection on startup
+async function testDatabaseConnection() {
+    try {
+        console.log('🔍 Testing database connection...');
+        await prisma.$connect();
+        await prisma.$queryRaw `SELECT 1`;
+        console.log('✅ Database connected successfully');
+        return true;
+    }
+    catch (error) {
+        console.error('');
+        console.error('❌ DATABASE CONNECTION FAILED');
+        console.error('================================');
+        console.error('Error:', error.message);
+        console.error('');
+        console.error('Please check:');
+        console.error('  1. DATABASE_URL is set correctly');
+        console.error('  2. Database is accessible from this network');
+        console.error('  3. Database credentials are valid');
+        console.error('================================');
+        console.error('');
+        return false;
+    }
+}
+// Start server
+async function startServer() {
+    // Test database before starting server
+    const dbConnected = await testDatabaseConnection();
+    if (!dbConnected) {
+        console.log('⚠️  Starting server anyway (database features will fail)');
+    }
     app.listen(PORT, () => {
         console.log('');
         console.log('🚀 StackSave Backend Server');
@@ -82,5 +130,10 @@ if (process.env.NODE_ENV !== 'production') {
         console.log('');
     });
 }
+// Start the server
+startServer().catch((error) => {
+    console.error('❌ Fatal error starting server:', error);
+    process.exit(1);
+});
 exports.default = app;
 //# sourceMappingURL=server.js.map
