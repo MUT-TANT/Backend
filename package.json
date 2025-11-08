@@ -4,14 +4,11 @@
   "description": "Backend API for StackSave - DeFi Savings Platform",
   "main": "dist/server.js",
   "scripts": {
-    "build": "npx prisma generate",
-    "start": "npx ts-node src/server.ts",
-    "start:prod": "node dist/server.js",
-    "dev": "nodemon --exec npx ts-node src/server.ts",
-    "postinstall": "npx prisma generate",
-    "check-contract": "npx ts-node src/scripts/checkContract.ts",
-    "configure-vaults": "npx ts-node src/scripts/configureVaults.ts",
-    "check-db": "npx ts-node src/scripts/checkDatabase.ts"
+    "start": "ts-node src/server.ts",
+    "dev": "nodemon --exec ts-node src/server.ts",
+    "check-contract": "ts-node src/scripts/checkContract.ts",
+    "configure-vaults": "ts-node src/scripts/configureVaults.ts",
+    "check-db": "ts-node src/scripts/checkDatabase.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
