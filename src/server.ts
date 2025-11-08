@@ -8,6 +8,7 @@ import cors from 'cors';
 import goalsRoutes from './routes/goals.routes';
 import usersRoutes from './routes/users.routes';
 import faucetRoutes from './routes/faucet.routes';
+import projectsRoutes from './routes/projects.routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 // Initialize Express app
@@ -42,11 +43,13 @@ app.get('/health', (req, res) => {
 app.use(`/api/${API_VERSION}/goals`, goalsRoutes);
 app.use(`/api/${API_VERSION}/users`, usersRoutes);
 app.use(`/api/${API_VERSION}/faucet`, faucetRoutes);
+app.use(`/api/${API_VERSION}/projects`, projectsRoutes);
 
 // For backward compatibility, also support routes without version
 app.use('/api/goals', goalsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/faucet', faucetRoutes);
+app.use('/api/projects', projectsRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
@@ -78,6 +81,9 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`  POST /api/faucet/claim`);
     console.log(`  GET  /api/faucet/can-claim/:address/:tokenAddress`);
     console.log(`  GET  /api/faucet/balance/:address/:tokenAddress`);
+    console.log(`  GET  /api/projects`);
+    console.log(`  GET  /api/projects/categories`);
+    console.log(`  GET  /api/projects/:id`);
     console.log('================================');
     console.log('');
   });

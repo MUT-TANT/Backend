@@ -1,0 +1,156 @@
+import { Request, Response } from 'express';
+import { projectsService } from '../services/projects.service';
+
+class ProjectsController {
+  /**
+   * GET /api/projects
+   * Get all public goods projects
+   */
+  async getAllProjects(req: Request, res: Response) {
+    try {
+      const { category, search } = req.query;
+
+      let projects;
+
+      if (search) {
+        // Search by query
+        projects = projectsService.searchProjects(search as string);
+      } else if (category) {
+        // Filter by category
+        projects = projectsService.getProjectsByCategory(category as string);
+      } else {
+        // Get all projects
+        projects = projectsService.getAllProjects();
+      }
+
+      res.json({
+        success: true,
+        data: {
+          projects,
+          total: projects.length,
+        },
+      });
+    } catch (error: any) {
+      console.error('Error getting projects:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to get projects',
+      });
+    }
+  }
+
+  /**
+   * GET /api/projects/categories
+   * Get all project categories
+   */
+  async getCategories(req: Request, res: Response) {
+    try {
+      const categories = projectsService.getCategories();
+
+      res.json({
+        success: true,
+        data: {
+          categories,
+        },
+      });
+    } catch (error: any) {
+      console.error('Error getting categories:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to get categories',
+      });
+    }
+  }
+
+  /**
+   * GET /api/projects/:id
+   * Get project by ID
+   */
+  async getProjectById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      const project = projectsService.getProjectById(id);
+
+      if (!project) {
+        return res.status(404).json({
+          success: false,
+          error: 'Project not found',
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          project,
+        },
+      });
+    } catch (error: any) {
+      console.error('Error getting project:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to get project',
+      });
+    }
+  }
+
+  /**
+   * GET /api/projects/address/:address
+   * Get project by address
+   */
+  async getProjectByAddress(req: Request, res: Response) {
+    try {
+      const { address } = req.params;
+
+      const project = projectsService.getProjectByAddress(address);
+
+      if (!project) {
+        return res.status(404).json({
+          success: false,
+          error: 'Project not found',
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          project,
+        },
+      });
+    } catch (error: any) {
+      console.error('Error getting project:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to get project',
+      });
+    }
+  }
+
+  /**
+   * GET /api/projects/validate/:address
+   * Check if address is an approved project
+   */
+  async validateProject(req: Request, res: Response) {
+    try {
+      const { address } = req.params;
+
+      const isApproved = projectsService.isApprovedProject(address);
+
+      res.json({
+        success: true,
+        data: {
+          isApproved,
+          address,
+        },
+      });
+    } catch (error: any) {
+      console.error('Error validating project:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to validate project',
+      });
+    }
+  }
+}
+
+export const projectsController = new ProjectsController();

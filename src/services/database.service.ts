@@ -10,6 +10,7 @@ export interface CreateGoalParams {
   targetAmount: string;
   duration: number;
   donationPercentage: number;
+  donationRecipient?: string;
 }
 
 export interface UpdateGoalParams {
@@ -34,6 +35,7 @@ class DatabaseService {
         targetAmount: params.targetAmount,
         duration: params.duration,
         donationPercentage: params.donationPercentage,
+        donationRecipient: params.donationRecipient?.toLowerCase(),
         depositedAmount: '0',
         currentValue: '0',
         yieldEarned: '0',

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { contractService } from '../services/contract.service';
 import { blockchainService } from '../services/blockchain.service';
 import { databaseService } from '../services/database.service';
+import { projectsService } from '../services/projects.service';
 
 export class GoalsController {
   /**
@@ -10,7 +11,7 @@ export class GoalsController {
    */
   async createGoal(req: Request, res: Response) {
     try {
-      const { name, currency, mode, targetAmount, durationInDays, donationPercentage, owner } = req.body;
+      const { name, currency, mode, targetAmount, durationInDays, donationPercentage, owner, donationRecipient } = req.body;
 
       // Validation
       if (!name || !currency || mode === undefined || !targetAmount || !durationInDays || donationPercentage === undefined || !owner) {
@@ -34,6 +35,17 @@ export class GoalsController {
         });
       }
 
+      // Validate donation recipient if provided
+      if (donationRecipient) {
+        const isApproved = projectsService.isApprovedProject(donationRecipient);
+        if (!isApproved) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid donation recipient - not an approved public goods project',
+          });
+        }
+      }
+
       // Create goal in database (off-chain)
       const goal = await databaseService.createGoal({
         name,
@@ -43,6 +55,7 @@ export class GoalsController {
         targetAmount,
         duration: durationInDays,
         donationPercentage,
+        donationRecipient,
       });
 
       res.status(201).json({
