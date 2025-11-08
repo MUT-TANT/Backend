@@ -56,6 +56,10 @@ export declare class ContractService {
      */
     getSupportedCurrencies(): Promise<string[]>;
     /**
+     * Get fallback currencies (mainnet addresses)
+     */
+    private getFallbackCurrencies;
+    /**
      * Get vault APY
      */
     getVaultAPY(currency: string, mode: number): Promise<string>;
