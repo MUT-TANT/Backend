@@ -26,10 +26,12 @@ export const STACKSAVE_ABI = [
   'function getVaultAPY(address currency, uint8 mode) view returns (uint256)',
   'function setDonationPercentage(uint256 goalId, uint256 newPercentage)',
   'function goalCounter() view returns (uint256)',
-  'event GoalCreated(uint256 indexed goalId, address indexed owner, address currency, uint256 targetAmount)',
-  'event Deposited(uint256 indexed goalId, address indexed user, uint256 amount)',
-  'event WithdrawnCompleted(uint256 indexed goalId, address indexed user, uint256 amount)',
-  'event WithdrawnEarly(uint256 indexed goalId, address indexed user, uint256 amount, uint256 penalty)',
+  'event GoalCreated(uint256 indexed goalId, address indexed owner, address currency, uint8 mode, uint256 targetAmount, uint256 duration, uint256 donationPercentage)',
+  'event Deposited(uint256 indexed goalId, address indexed user, uint256 amount, uint256 vaultShares)',
+  'event WithdrawnCompleted(uint256 indexed goalId, address indexed user, uint256 principal, uint256 yield, uint256 userYield, uint256 donatedYield)',
+  'event WithdrawnEarly(uint256 indexed goalId, address indexed user, uint256 amount, uint256 penalty, uint256 penaltyToRewards, uint256 penaltyToTreasury)',
+  'event DonationPercentageUpdated(uint256 indexed goalId, uint256 oldPct, uint256 newPct)',
+  'event VaultConfigured(address indexed currency, uint8 mode, address vaultAddress)',
 ];
 
 // ERC20 ABI for token operations

@@ -111,43 +111,74 @@ class DatabaseService {
   }
 
   /**
-   * Record a daily save for a goal
+   * Create a daily save record (used by blockchain event listener)
    */
-  async recordDailySave(goalId: number, amount: string) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset to start of day
+  async createDailySave(params: {
+    userId: string;
+    goalId: number;
+    amount: string;
+    date: Date;
+    txHash?: string;
+  }) {
+    const saveDate = new Date(params.date);
+    saveDate.setHours(0, 0, 0, 0); // Reset to start of day
 
-    // Check if save already exists for today
+    // Check if save already exists for this date
     const existing = await prisma.dailySave.findUnique({
       where: {
         goalId_date: {
-          goalId,
-          date: today,
+          goalId: params.goalId,
+          date: saveDate,
         },
       },
     });
 
     if (existing) {
-      // Update existing save
-      return await prisma.dailySave.update({
+      // Update existing save (aggregate amounts if multiple deposits same day)
+      const newAmount = (parseFloat(existing.amount) + parseFloat(params.amount)).toString();
+      const updated = await prisma.dailySave.update({
         where: { id: existing.id },
-        data: { amount },
+        data: {
+          amount: newAmount,
+          // Note: txHash not stored in current schema
+        },
       });
+
+      // Update streak
+      await this.updateStreak(params.goalId);
+
+      return updated;
     }
 
     // Create new daily save
     const dailySave = await prisma.dailySave.create({
       data: {
-        goalId,
-        date: today,
-        amount,
+        goalId: params.goalId,
+        date: saveDate,
+        amount: params.amount,
       },
     });
 
     // Update streak
-    await this.updateStreak(goalId);
+    await this.updateStreak(params.goalId);
 
     return dailySave;
+  }
+
+  /**
+   * Record a daily save for a goal (backward compatibility)
+   */
+  async recordDailySave(goalId: number, amount: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset to start of day
+
+    // Use the new createDailySave method
+    return await this.createDailySave({
+      userId: '', // Not used in current schema
+      goalId,
+      amount,
+      date: today,
+    });
   }
 
   /**

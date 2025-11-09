@@ -11,6 +11,7 @@ import faucetRoutes from './routes/faucet.routes';
 import projectsRoutes from './routes/projects.routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { PrismaClient } from '@prisma/client';
+import { blockchainListenerService } from './services/blockchain-listener.service';
 
 // Initialize Prisma Client
 const prisma = new PrismaClient();
@@ -34,17 +35,21 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint with database status
+// Health check endpoint with database and listener status
 app.get('/health', async (req, res) => {
   try {
     // Test database connection
     await prisma.$queryRaw`SELECT 1`;
+
+    // Get listener status
+    const listenerStatus = blockchainListenerService.getStatus();
 
     res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
       version: API_VERSION,
       database: 'connected',
+      eventListener: listenerStatus.isListening ? 'running' : 'stopped',
       environment: process.env.NODE_ENV || 'development',
     });
   } catch (error: any) {
@@ -108,6 +113,15 @@ async function startServer() {
 
   if (!dbConnected) {
     console.log('⚠️  Starting server anyway (database features will fail)');
+  }
+
+  // Start blockchain event listener
+  try {
+    console.log('🎧 Starting blockchain event listener...');
+    await blockchainListenerService.startListening();
+  } catch (error: any) {
+    console.error('❌ Failed to start event listener:', error.message);
+    console.log('⚠️  Server will run without event listener (manual sync required)');
   }
 
   app.listen(PORT, () => {
