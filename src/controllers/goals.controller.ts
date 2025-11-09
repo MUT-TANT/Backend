@@ -497,6 +497,74 @@ export class GoalsController {
       });
     }
   }
+
+  /**
+   * Sync goal from blockchain (force immediate update)
+   * POST /api/goals/:goalId/sync
+   */
+  async syncGoalFromBlockchain(req: Request, res: Response) {
+    try {
+      const { goalId } = req.params;
+
+      if (!goalId || isNaN(Number(goalId))) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid goal ID',
+        });
+      }
+
+      console.log(`🔄 Syncing goal ${goalId} from blockchain...`);
+
+      // Get goal from database
+      const dbGoal = await databaseService.getGoal(Number(goalId));
+      if (!dbGoal) {
+        return res.status(404).json({
+          success: false,
+          error: 'Goal not found',
+        });
+      }
+
+      // Get fresh data from blockchain
+      const blockchainGoalId = dbGoal.blockchainGoalId;
+      if (blockchainGoalId === null || blockchainGoalId === undefined) {
+        return res.status(400).json({
+          success: false,
+          error: 'Goal not yet deployed to blockchain',
+        });
+      }
+
+      const goalDetails = await contractService.getGoalDetails(blockchainGoalId);
+
+      // Update database with fresh blockchain data
+      await databaseService.updateGoal(Number(goalId), {
+        depositedAmount: goalDetails.goal.depositedAmount.toString(),
+        currentValue: goalDetails.currentValue.toString(),
+        yieldEarned: goalDetails.yieldEarned.toString(),
+        status: Number(goalDetails.goal.status),
+      });
+
+      // Update streak (this will check if a deposit was made today)
+      await databaseService.updateStreak(Number(goalId));
+
+      // Get updated goal
+      const updatedGoal = await databaseService.getGoal(Number(goalId));
+
+      console.log(`✅ Goal ${goalId} synced successfully`);
+
+      res.json({
+        success: true,
+        data: {
+          goal: updatedGoal,
+        },
+      });
+    } catch (error: any) {
+      console.error('Error in syncGoalFromBlockchain:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to sync goal from blockchain',
+      });
+    }
+  }
 }
 
 export const goalsController = new GoalsController();

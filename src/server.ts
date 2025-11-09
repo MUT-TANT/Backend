@@ -9,6 +9,7 @@ import goalsRoutes from './routes/goals.routes';
 import usersRoutes from './routes/users.routes';
 import faucetRoutes from './routes/faucet.routes';
 import projectsRoutes from './routes/projects.routes';
+import transactionsRoutes from './routes/transactions.routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { PrismaClient } from '@prisma/client';
 import { blockchainListenerService } from './services/blockchain-listener.service';
@@ -69,12 +70,14 @@ app.use(`/api/${API_VERSION}/goals`, goalsRoutes);
 app.use(`/api/${API_VERSION}/users`, usersRoutes);
 app.use(`/api/${API_VERSION}/faucet`, faucetRoutes);
 app.use(`/api/${API_VERSION}/projects`, projectsRoutes);
+app.use(`/api/${API_VERSION}`, transactionsRoutes);
 
 // For backward compatibility, also support routes without version
 app.use('/api/goals', goalsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/faucet', faucetRoutes);
 app.use('/api/projects', projectsRoutes);
+app.use('/api', transactionsRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

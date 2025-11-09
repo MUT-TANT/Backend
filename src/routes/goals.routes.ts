@@ -22,6 +22,9 @@ router.post('/:goalId/withdraw', (req, res) => goalsController.withdrawCompleted
 // Early withdrawal with penalty
 router.post('/:goalId/withdraw-early', (req, res) => goalsController.withdrawEarly(req, res));
 
+// Sync goal from blockchain (force immediate update)
+router.post('/:goalId/sync', (req, res) => goalsController.syncGoalFromBlockchain(req, res));
+
 // Get supported currencies with APYs
 router.get('/currencies/list', (req, res) => goalsController.getSupportedCurrencies(req, res));
 

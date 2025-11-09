@@ -259,6 +259,73 @@ class DatabaseService {
   }
 
   /**
+   * Create transaction record
+   */
+  async createTransaction(data: {
+    goalId: number;
+    txHash: string;
+    type: string;
+    amount: string;
+    blockNumber?: number;
+    timestamp: Date;
+    status?: string;
+  }) {
+    try {
+      return await prisma.transaction.create({
+        data: {
+          goalId: data.goalId,
+          txHash: data.txHash,
+          type: data.type,
+          amount: data.amount,
+          blockNumber: data.blockNumber,
+          timestamp: data.timestamp,
+          status: data.status || 'completed',
+        },
+      });
+    } catch (error: any) {
+      // Ignore unique constraint errors (transaction already exists)
+      if (error.code === 'P2002') {
+        console.log(`Transaction ${data.txHash} already exists, skipping...`);
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get transactions for a goal
+   */
+  async getGoalTransactions(goalId: number) {
+    return await prisma.transaction.findMany({
+      where: { goalId },
+      orderBy: { timestamp: 'desc' },
+    });
+  }
+
+  /**
+   * Get transactions for a user (across all their goals)
+   */
+  async getUserTransactions(userAddress: string) {
+    return await prisma.transaction.findMany({
+      where: {
+        goal: {
+          owner: userAddress.toLowerCase(),
+        },
+      },
+      include: {
+        goal: {
+          select: {
+            id: true,
+            name: true,
+            currency: true,
+          },
+        },
+      },
+      orderBy: { timestamp: 'desc' },
+    });
+  }
+
+  /**
    * Cleanup - disconnect Prisma client
    */
   async disconnect() {

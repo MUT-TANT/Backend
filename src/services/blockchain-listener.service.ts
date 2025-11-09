@@ -207,6 +207,15 @@ class BlockchainListenerService {
         txHash: txHash,
       });
 
+      // Create transaction record for history
+      await databaseService.createTransaction({
+        goalId: goalId,
+        txHash: txHash,
+        type: 'deposit',
+        amount: amount.toString(),
+        timestamp: new Date(),
+      });
+
       console.log(`✅ Database synced for goal ${goalId}`);
     } catch (error) {
       console.error(`❌ Error handling deposit event for goal ${goalId}:`, error);
@@ -237,6 +246,16 @@ class BlockchainListenerService {
         currentValue: goalDetails.currentValue.toString(),
         yieldEarned: goalDetails.yieldEarned.toString(),
         status: Number(goalDetails.goal.status), // Should be 2 (Withdrawn)
+      });
+
+      // Create transaction record for history
+      const totalAmount = principal + userYield;
+      await databaseService.createTransaction({
+        goalId: goalId,
+        txHash: txHash,
+        type: 'withdraw',
+        amount: totalAmount.toString(),
+        timestamp: new Date(),
       });
 
       console.log(`✅ Database synced for completed withdrawal on goal ${goalId}`);
@@ -270,6 +289,15 @@ class BlockchainListenerService {
         currentValue: goalDetails.currentValue.toString(),
         yieldEarned: goalDetails.yieldEarned.toString(),
         status: Number(goalDetails.goal.status), // Should be 2 (Withdrawn)
+      });
+
+      // Create transaction record for history
+      await databaseService.createTransaction({
+        goalId: goalId,
+        txHash: txHash,
+        type: 'withdrawEarly',
+        amount: amount.toString(),
+        timestamp: new Date(),
       });
 
       console.log(`✅ Database synced for early withdrawal on goal ${goalId}`);
